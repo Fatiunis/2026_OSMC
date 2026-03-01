@@ -38,10 +38,20 @@ steps:
       DB_NAME: hospital_test
       DB_PORT: 3306
     commands:
-      - apt-get update && apt-get install -y git unzip
+      - apt-get update && apt-get install -y default-mysql-client git unzip iputils-ping
+      - echo "DB_HOST=$DB_HOST"
+      - getent hosts mysql_test || true
+      - ping -c 1 mysql_test || true
+
+      - echo "Esperando MySQL desde test-backend..."
+      - for i in `seq 1 60`; do mysqladmin ping -h "$DB_HOST" -u"$DB_USER" -p"$DB_PASS" && break || sleep 2; done
+
+      - echo "Probando query real..."
+      - mysql -h "$DB_HOST" -u"$DB_USER" -p"$DB_PASS" -e "SELECT 1;" "$DB_NAME"
+
       - docker-php-ext-install mysqli
-      - pecl install xdebug && docker-php-ext-enable xdebug
       - cd sistema_adfs
+      - php -r 'echo "DB_HOST=".getenv("DB_HOST").PHP_EOL;'
       - php ./phpunit.phar -c phpunit.xml --testdox
 
 when:
