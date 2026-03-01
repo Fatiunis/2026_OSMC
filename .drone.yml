@@ -10,6 +10,9 @@ trigger:
   event:
     - push
     - pull_request
+  branch:
+    - dev
+    - uat
   paths:
     include:
       - sistema_adfs/**
@@ -43,7 +46,8 @@ steps:
       DB_NAME: hospital_test
       DB_PORT: 3306
     commands:
-      - apt-get update && apt-get install -y default-mysql-client git unzip iputils-ping
+      - apt-get update && apt-get install -y default-mysql-client git unzip iputils-ping autoconf g++ make pkg-config
+      - echo "Esperando MySQL desde test-backend..."
       - for i in `seq 1 60`; do mysqladmin ping -h "$DB_HOST" -u"$DB_USER" -p"$DB_PASS" && break || sleep 2; done
       - mysql -h "$DB_HOST" -u"$DB_USER" -p"$DB_PASS" -e "SELECT 1;" "$DB_NAME"
       - docker-php-ext-install mysqli pdo_mysql
@@ -63,6 +67,9 @@ trigger:
   event:
     - push
     - pull_request
+  branch:
+    - dev
+    - uat
   paths:
     include:
       - HOSPITAL_SYSTEM_REACT/**
@@ -101,34 +108,34 @@ trigger:
 
 steps:
   - name: deploy-dev
-    image: docker:24
+    image: docker/compose:2.24.6
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
     commands:
-      - docker compose --env-file envs/dev.env -p hospital_dev up -d --build
+      - docker-compose --env-file envs/dev.env -p hospital_dev up -d --build
     when:
       branch:
         - dev
 
   - name: deploy-uat
-    image: docker:24
+    image: docker/compose:2.24.6
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
     commands:
-      - docker compose --env-file envs/uat.env -p hospital_uat up -d --build
+      - docker-compose --env-file envs/uat.env -p hospital_uat up -d --build
     when:
       branch:
         - uat
 
   - name: deploy-prod
-    image: docker:24
+    image: docker/compose:2.24.6
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
     commands:
-      - docker compose --env-file envs/prod.env -p hospital_prod up -d --build
+      - docker-compose --env-file envs/prod.env -p hospital_prod up -d --build
     when:
       branch:
         - main
