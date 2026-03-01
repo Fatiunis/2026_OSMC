@@ -1,8 +1,34 @@
+########################################
+# PIPELINE 1: BACKEND (solo si cambia backend)
+########################################
+---
 kind: pipeline
 type: docker
-name: ci-cd
+name: backend-ci
+
+trigger:
+  event:
+    - push
+    - pull_request
+
+services:
+  - name: mysql_test
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: hospital_test
+    command:
+      - --default-authentication-plugin=mysql_native_password
 
 steps:
+  - name: seed-db
+    image: mysql:8.0
+    commands:
+      - echo "Esperando MySQL..."
+      - for i in `seq 1 60`; do mysqladmin ping -h mysql_test -uroot -prootpassword && break || sleep 2; done
+      - echo "Cargando SQL..."
+      - mysql -h mysql_test -uroot -prootpassword hospital_test < setup_database.sql
+
   - name: test-backend
     image: php:8.2
     environment:
@@ -12,12 +38,37 @@ steps:
       DB_NAME: hospital_test
       DB_PORT: 3306
     commands:
-      - apt-get update && apt-get install -y git unzip
+      - apt-get update && apt-get install -y default-mysql-client git unzip iputils-ping
+      - echo "DB_HOST=$DB_HOST"
+      - getent hosts mysql_test || true
+      - ping -c 1 mysql_test || true
+      - echo "Esperando MySQL desde test-backend..."
+      - for i in `seq 1 60`; do mysqladmin ping -h "$DB_HOST" -u"$DB_USER" -p"$DB_PASS" && break || sleep 2; done
+      - mysql -h "$DB_HOST" -u"$DB_USER" -p"$DB_PASS" -e "SELECT 1;" "$DB_NAME"
       - docker-php-ext-install mysqli
-      - pecl install xdebug && docker-php-ext-enable xdebug
       - cd sistema_adfs
       - php ./phpunit.phar -c phpunit.xml --testdox
 
+when:
+  changes:
+    include:
+      - sistema_adfs/**
+
+
+########################################
+# PIPELINE 2: FRONTEND (solo si cambia frontend)
+########################################
+---
+kind: pipeline
+type: docker
+name: frontend-ci
+
+trigger:
+  event:
+    - push
+    - pull_request
+
+steps:
   - name: test-frontend
     image: node:20
     commands:
@@ -25,6 +76,29 @@ steps:
       - npm ci
       - npm test
 
+when:
+  changes:
+    include:
+      - HOSPITAL_SYSTEM_REACT/**
+
+
+########################################
+# PIPELINE 3: DEPLOY (si cambió FE o BE)
+########################################
+---
+kind: pipeline
+type: docker
+name: deploy
+
+trigger:
+  event:
+    - push
+  branch:
+    - dev
+    - uat
+    - main
+
+steps:
   - name: deploy-dev
     image: docker:24
     volumes:
@@ -57,9 +131,17 @@ steps:
     when:
       branch:
         - main
-        - master
 
 volumes:
   - name: dockersock
     host:
       path: /var/run/docker.sock
+
+when:
+  changes:
+    include:
+      - sistema_adfs/**
+      - HOSPITAL_SYSTEM_REACT/**
+      - docker-compose.yml
+      - envs/**
+      - .drone.yml
