@@ -1,0 +1,29 @@
+services:
+  drone:
+    image: drone/drone:2
+    ports:
+      - "8085:80"
+    volumes:
+      - drone_data:/data
+    environment:
+      - DRONE_GITHUB_CLIENT_ID=${DRONE_GITHUB_CLIENT_ID}
+      - DRONE_GITHUB_CLIENT_SECRET=${DRONE_GITHUB_CLIENT_SECRET}
+      - DRONE_RPC_SECRET=${DRONE_RPC_SECRET}
+      - DRONE_SERVER_HOST=localhost:8085
+      - DRONE_SERVER_PROTO=http
+
+  runner:
+    image: drone/drone-runner-docker:1
+    depends_on:
+      - drone
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DRONE_RPC_PROTO=http
+      - DRONE_RPC_HOST=drone
+      - DRONE_RPC_SECRET=${DRONE_RPC_SECRET}
+      - DRONE_RUNNER_CAPACITY=2
+      - DRONE_RUNNER_NAME=runner
+
+volumes:
+  drone_data:

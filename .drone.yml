@@ -1,0 +1,60 @@
+kind: pipeline
+type: docker
+name: ci-cd
+
+steps:
+  - name: test-backend
+    image: php:8.2
+    commands:
+      - apt-get update && apt-get install -y git unzip
+      - docker-php-ext-install mysqli
+      - pecl install xdebug && docker-php-ext-enable xdebug
+      - cd sistema_adfs
+      - php -v
+      - php ./phpunit.phar --coverage-text
+
+  - name: test-frontend
+    image: node:20
+    commands:
+      - cd HOSPITAL_SYSTEM_REACT
+      - npm ci
+      - npm test
+
+  - name: deploy-dev
+    image: docker:24
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    commands:
+      - docker compose --env-file envs/dev.env -p hospital_dev up -d --build
+    when:
+      branch:
+        - dev
+
+  - name: deploy-uat
+    image: docker:24
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    commands:
+      - docker compose --env-file envs/uat.env -p hospital_uat up -d --build
+    when:
+      branch:
+        - uat
+
+  - name: deploy-prod
+    image: docker:24
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    commands:
+      - docker compose --env-file envs/prod.env -p hospital_prod up -d --build
+    when:
+      branch:
+        - main
+        - master
+
+volumes:
+  - name: dockersock
+    host:
+      path: /var/run/docker.sock

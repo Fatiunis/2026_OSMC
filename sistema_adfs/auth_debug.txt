@@ -14,3 +14,11 @@ Array
 )
 
 
+DECODIFICADO:
+Array
+(
+    [correo] => admin@ejemplo.com
+    [password] => admin123
+)
+
+

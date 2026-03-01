@@ -21,6 +21,7 @@ services:
       DB_NAME: hospital_${ENV_NAME}
       DB_USER: root
       DB_PASS: rootpassword
+      DB_PORT: ${DB_PORT}
     depends_on:
       - mysql
     volumes:
