@@ -22,3 +22,19 @@ Array
 )
 
 
+DECODIFICADO:
+Array
+(
+    [correo] => admin@ejemplo.com
+    [password] => admin123
+)
+
+
+DECODIFICADO:
+Array
+(
+    [correo] => admin@ejemplo.com
+    [password] => admin123
+)
+
+
