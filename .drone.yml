@@ -5,13 +5,18 @@ name: ci-cd
 steps:
   - name: test-backend
     image: php:8.2
+    environment:
+      DB_HOST: mysql_test
+      DB_USER: root
+      DB_PASS: rootpassword
+      DB_NAME: hospital_test
+      DB_PORT: 3306
     commands:
       - apt-get update && apt-get install -y git unzip
       - docker-php-ext-install mysqli
       - pecl install xdebug && docker-php-ext-enable xdebug
       - cd sistema_adfs
-      - php -v
-      - php ./phpunit.phar --coverage-text
+      - php ./phpunit.phar -c phpunit.xml --testdox
 
   - name: test-frontend
     image: node:20

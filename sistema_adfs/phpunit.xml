@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<phpunit bootstrap="index.php"
-         colors="true"
-         stopOnFailure="false">
+<phpunit colors="true">
   <testsuites>
     <testsuite name="Backend Tests">
       <directory>tests</directory>
     </testsuite>
   </testsuites>
 
+  <!-- Opcional: si quieres coverage -->
   <coverage processUncoveredFiles="true">
     <include>
       <directory suffix=".php">.</directory>
@@ -16,9 +15,13 @@
       <directory>tests</directory>
       <file>phpunit.phar</file>
     </exclude>
-    <report>
-      <html outputDirectory="coverage-html"/>
-      <text outputFile="coverage.txt"/>
-    </report>
   </coverage>
+
+  <php>
+    <env name="DB_HOST" value="mysql_test"/>
+    <env name="DB_USER" value="root"/>
+    <env name="DB_PASS" value="rootpassword"/>
+    <env name="DB_NAME" value="hospital_test"/>
+    <env name="DB_PORT" value="3306"/>
+  </php>
 </phpunit>
