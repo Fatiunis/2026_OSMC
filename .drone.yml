@@ -1,6 +1,7 @@
 ########################################
 # PIPELINE 1: BACKEND (solo si cambia backend)
 ########################################
+
 ---
 kind: pipeline
 type: docker
@@ -57,6 +58,7 @@ steps:
 ########################################
 # PIPELINE 2: FRONTEND (solo si cambia frontend)
 ########################################
+
 ---
 kind: pipeline
 type: docker
@@ -83,6 +85,7 @@ steps:
 ########################################
 # PIPELINE 3: DEPLOY (si cambió FE o BE)
 ########################################
+
 ---
 kind: pipeline
 type: docker
