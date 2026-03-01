@@ -7,9 +7,12 @@ type: docker
 name: backend-ci
 
 trigger:
-  event:
-    - push
-    - pull_request
+  event: [push, pull_request]
+  paths:
+    include:
+      - sistema_adfs/**
+      - setup_database.sql
+      - .drone.yml
 
 services:
   - name: mysql_test
@@ -49,12 +52,6 @@ steps:
       - cd sistema_adfs
       - php ./phpunit.phar -c phpunit.xml --testdox
 
-when:
-  changes:
-    include:
-      - sistema_adfs/**
-
-
 ########################################
 # PIPELINE 2: FRONTEND (solo si cambia frontend)
 ########################################
@@ -64,9 +61,11 @@ type: docker
 name: frontend-ci
 
 trigger:
-  event:
-    - push
-    - pull_request
+  event: [push, pull_request]
+  paths:
+    include:
+      - HOSPITAL_SYSTEM_REACT/**
+      - .drone.yml
 
 steps:
   - name: test-frontend
@@ -75,12 +74,6 @@ steps:
       - cd HOSPITAL_SYSTEM_REACT
       - npm ci
       - npm test
-
-when:
-  changes:
-    include:
-      - HOSPITAL_SYSTEM_REACT/**
-
 
 ########################################
 # PIPELINE 3: DEPLOY (si cambió FE o BE)
@@ -91,12 +84,15 @@ type: docker
 name: deploy
 
 trigger:
-  event:
-    - push
-  branch:
-    - dev
-    - uat
-    - main
+  event: [push]
+  branch: [dev, uat, main]
+  paths:
+    include:
+      - sistema_adfs/**
+      - HOSPITAL_SYSTEM_REACT/**
+      - docker-compose.yml
+      - envs/**
+      - .drone.yml
 
 steps:
   - name: deploy-dev
@@ -107,8 +103,7 @@ steps:
     commands:
       - docker compose --env-file envs/dev.env -p hospital_dev up -d --build
     when:
-      branch:
-        - dev
+      branch: [dev]
 
   - name: deploy-uat
     image: docker:24
@@ -118,8 +113,7 @@ steps:
     commands:
       - docker compose --env-file envs/uat.env -p hospital_uat up -d --build
     when:
-      branch:
-        - uat
+      branch: [uat]
 
   - name: deploy-prod
     image: docker:24
@@ -129,19 +123,9 @@ steps:
     commands:
       - docker compose --env-file envs/prod.env -p hospital_prod up -d --build
     when:
-      branch:
-        - main
+      branch: [main]
 
 volumes:
   - name: dockersock
     host:
       path: /var/run/docker.sock
-
-when:
-  changes:
-    include:
-      - sistema_adfs/**
-      - HOSPITAL_SYSTEM_REACT/**
-      - docker-compose.yml
-      - envs/**
-      - .drone.yml
