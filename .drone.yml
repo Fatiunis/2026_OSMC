@@ -1,143 +1,124 @@
-########################################
-# PIPELINE 1: BACKEND (solo si cambia backend)
-########################################
+- kind: pipeline
+  type: docker
+  name: backend-ci
 
----
-kind: pipeline
-type: docker
-name: backend-ci
+  trigger:
+    event:
+      - push
+      - pull_request
+    paths:
+      include:
+        - sistema_adfs/**
 
-trigger:
-  event:
-    - push
-    - pull_request
-  paths:
-    include:
-      - sistema_adfs/**
-      - setup_database.sql
-      - .drone.yml
+  services:
+    - name: mysql_test
+      image: mysql:8.0
+      environment:
+        MYSQL_ROOT_PASSWORD: rootpassword
+        MYSQL_DATABASE: hospital_test
+      command:
+        - --default-authentication-plugin=mysql_native_password
 
-services:
-  - name: mysql_test
-    image: mysql:8.0
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: hospital_test
-    command:
-      - --default-authentication-plugin=mysql_native_password
+  steps:
+    - name: seed-db
+      image: mysql:8.0
+      commands:
+        - echo "Esperando MySQL..."
+        - for i in `seq 1 60`; do mysqladmin ping -h mysql_test -uroot -prootpassword && break || sleep 2; done
+        - echo "Cargando SQL..."
+        - mysql -h mysql_test -uroot -prootpassword hospital_test < setup_database.sql
 
-steps:
-  - name: seed-db
-    image: mysql:8.0
-    commands:
-      - echo "Esperando MySQL..."
-      - for i in `seq 1 60`; do mysqladmin ping -h mysql_test -uroot -prootpassword && break || sleep 2; done
-      - echo "Cargando SQL..."
-      - mysql -h mysql_test -uroot -prootpassword hospital_test < setup_database.sql
+    - name: test-backend
+      image: php:8.2
+      environment:
+        DB_HOST: mysql_test
+        DB_USER: root
+        DB_PASS: rootpassword
+        DB_NAME: hospital_test
+        DB_PORT: 3306
+      commands:
+        - apt-get update && apt-get install -y git unzip
+        - docker-php-ext-install mysqli
+        - pecl install xdebug && docker-php-ext-enable xdebug
+        - cd sistema_adfs
+        - php ./phpunit.phar -c phpunit.xml --testdox
 
-  - name: test-backend
-    image: php:8.2
-    environment:
-      DB_HOST: mysql_test
-      DB_USER: root
-      DB_PASS: rootpassword
-      DB_NAME: hospital_test
-      DB_PORT: 3306
-    commands:
-      - apt-get update && apt-get install -y default-mysql-client git unzip iputils-ping
-      - echo "DB_HOST=$DB_HOST"
-      - getent hosts mysql_test || true
-      - ping -c 1 mysql_test || true
-      - echo "Esperando MySQL desde test-backend..."
-      - for i in `seq 1 60`; do mysqladmin ping -h "$DB_HOST" -u"$DB_USER" -p"$DB_PASS" && break || sleep 2; done
-      - mysql -h "$DB_HOST" -u"$DB_USER" -p"$DB_PASS" -e "SELECT 1;" "$DB_NAME"
-      - docker-php-ext-install mysqli
-      - cd sistema_adfs
-      - php ./phpunit.phar -c phpunit.xml --testdox
 
-########################################
-# PIPELINE 2: FRONTEND (solo si cambia frontend)
-########################################
+- kind: pipeline
+  type: docker
+  name: frontend-ci
 
----
-kind: pipeline
-type: docker
-name: frontend-ci
+  trigger:
+    event:
+      - push
+      - pull_request
+    paths:
+      include:
+        - HOSPITAL_SYSTEM_REACT/**
 
-trigger:
-  event:
-    - push
-    - pull_request
-  paths:
-    include:
-      - sistema_adfs/**
-      - setup_database.sql
-      - .drone.yml
+  steps:
+    - name: test-frontend
+      image: node:20
+      commands:
+        - cd HOSPITAL_SYSTEM_REACT
+        - npm ci
+        - npm test
 
-steps:
-  - name: test-frontend
-    image: node:20
-    commands:
-      - cd HOSPITAL_SYSTEM_REACT
-      - npm ci
-      - npm test
 
-########################################
-# PIPELINE 3: DEPLOY (si cambió FE o BE)
-########################################
+- kind: pipeline
+  type: docker
+  name: deploy
 
----
-kind: pipeline
-type: docker
-name: deploy
+  trigger:
+    event:
+      - push
+    branch:
+      - dev
+      - uat
+      - main
+    paths:
+      include:
+        - sistema_adfs/**
+        - HOSPITAL_SYSTEM_REACT/**
+        - docker-compose.yml
+        - envs/**
+        - .drone.yml
 
-trigger:
-  event:
-    - push
-  branch:
-    - dev
-    - uat
-    - main
-  paths:
-    include:
-      - sistema_adfs/**
-      - HOSPITAL_SYSTEM_REACT/**
-      - docker-compose.yml
-      - envs/**
-      - .drone.yml
+  steps:
+    - name: deploy-dev
+      image: docker:24
+      volumes:
+        - name: dockersock
+          path: /var/run/docker.sock
+      commands:
+        - docker compose --env-file envs/dev.env -p hospital_dev up -d --build
+      when:
+        branch:
+          - dev
 
-steps:
-  - name: deploy-dev
-    image: docker:24
-    volumes:
-      - name: dockersock
+    - name: deploy-uat
+      image: docker:24
+      volumes:
+        - name: dockersock
+          path: /var/run/docker.sock
+      commands:
+        - docker compose --env-file envs/uat.env -p hospital_uat up -d --build
+      when:
+        branch:
+          - uat
+
+    - name: deploy-prod
+      image: docker:24
+      volumes:
+        - name: dockersock
+          path: /var/run/docker.sock
+      commands:
+        - docker compose --env-file envs/prod.env -p hospital_prod up -d --build
+      when:
+        branch:
+          - main
+
+  volumes:
+    - name: dockersock
+      host:
         path: /var/run/docker.sock
-    commands:
-      - docker compose --env-file envs/dev.env -p hospital_dev up -d --build
-    when:
-      branch: [dev]
-
-  - name: deploy-uat
-    image: docker:24
-    volumes:
-      - name: dockersock
-        path: /var/run/docker.sock
-    commands:
-      - docker compose --env-file envs/uat.env -p hospital_uat up -d --build
-    when:
-      branch: [uat]
-
-  - name: deploy-prod
-    image: docker:24
-    volumes:
-      - name: dockersock
-        path: /var/run/docker.sock
-    commands:
-      - docker compose --env-file envs/prod.env -p hospital_prod up -d --build
-    when:
-      branch: [main]
-
-volumes:
-  - name: dockersock
-    host:
-      path: /var/run/docker.sock
