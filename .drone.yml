@@ -7,7 +7,9 @@ type: docker
 name: backend-ci
 
 trigger:
-  event: [push, pull_request]
+  event:
+    - push
+    - pull_request
   paths:
     include:
       - sistema_adfs/**
@@ -61,10 +63,13 @@ type: docker
 name: frontend-ci
 
 trigger:
-  event: [push, pull_request]
+  event:
+    - push
+    - pull_request
   paths:
     include:
-      - HOSPITAL_SYSTEM_REACT/**
+      - sistema_adfs/**
+      - setup_database.sql
       - .drone.yml
 
 steps:
@@ -84,8 +89,12 @@ type: docker
 name: deploy
 
 trigger:
-  event: [push]
-  branch: [dev, uat, main]
+  event:
+    - push
+  branch:
+    - dev
+    - uat
+    - main
   paths:
     include:
       - sistema_adfs/**

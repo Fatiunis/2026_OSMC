@@ -1,152 +1,31 @@
-########################################
-# PIPELINE 1: BACKEND (solo si cambia backend)
-########################################
----
-kind: pipeline
-type: docker
-name: backend-ci
-
-trigger:
-  event:
-    - push
-    - pull_request
-
 services:
-  - name: mysql_test
-    image: mysql:8.0
+  drone:
+    image: drone/drone:2
+    ports:
+      - "8085:80"
+    volumes:
+      - drone_data:/data
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: hospital_test
-    command:
-      - --default-authentication-plugin=mysql_native_password
+      - DRONE_GITHUB_CLIENT_ID=${DRONE_GITHUB_CLIENT_ID}
+      - DRONE_GITHUB_CLIENT_SECRET=${DRONE_GITHUB_CLIENT_SECRET}
+      - DRONE_RPC_SECRET=${DRONE_RPC_SECRET}
+      - DRONE_SERVER_HOST=${DRONE_SERVER_HOST}
+      - DRONE_SERVER_PROTO=${DRONE_SERVER_PROTO}
+      - DRONE_LOGS_DEBUG=true
+      - DRONE_LOGS_TRACE=true
 
-steps:
-  - name: seed-db
-    image: mysql:8.0
-    commands:
-      - echo "Esperando MySQL..."
-      - for i in `seq 1 60`; do mysqladmin ping -h mysql_test -uroot -prootpassword && break || sleep 2; done
-      - echo "Cargando SQL..."
-      - mysql -h mysql_test -uroot -prootpassword hospital_test < setup_database.sql
-
-  - name: test-backend
-    image: php:8.2
+  runner:
+    image: drone/drone-runner-docker:1
+    depends_on:
+      - drone
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
-      DB_HOST: mysql_test
-      DB_USER: root
-      DB_PASS: rootpassword
-      DB_NAME: hospital_test
-      DB_PORT: 3306
-    commands:
-      - apt-get update && apt-get install -y default-mysql-client git unzip iputils-ping
-      - echo "DB_HOST=$DB_HOST"
-      - getent hosts mysql_test || true
-      - ping -c 1 mysql_test || true
-
-      - echo "Esperando MySQL desde test-backend..."
-      - for i in `seq 1 60`; do mysqladmin ping -h "$DB_HOST" -u"$DB_USER" -p"$DB_PASS" && break || sleep 2; done
-
-      - echo "Probando query real..."
-      - mysql -h "$DB_HOST" -u"$DB_USER" -p"$DB_PASS" -e "SELECT 1;" "$DB_NAME"
-
-      - docker-php-ext-install mysqli
-      - cd sistema_adfs
-      - php -r 'echo "DB_HOST=".getenv("DB_HOST").PHP_EOL;'
-      - php ./phpunit.phar -c phpunit.xml --testdox
-
-when:
-  changes:
-    include:
-      - sistema_adfs/**
-
-
-########################################
-# PIPELINE 2: FRONTEND (solo si cambia frontend)
-########################################
----
-kind: pipeline
-type: docker
-name: frontend-ci
-
-trigger:
-  event:
-    - push
-    - pull_request
-
-steps:
-  - name: test-frontend
-    image: node:20
-    commands:
-      - cd HOSPITAL_SYSTEM_REACT
-      - npm ci
-      - npm test
-
-when:
-  changes:
-    include:
-      - HOSPITAL_SYSTEM_REACT/**
-
-
-########################################
-# PIPELINE 3: DEPLOY (opción 1: si cambió FE o BE)
-########################################
----
-kind: pipeline
-type: docker
-name: deploy
-
-trigger:
-  event:
-    - push
-  branch:
-    - dev
-    - uat
-    - main
-
-steps:
-  - name: deploy-dev
-    image: docker:24
-    volumes:
-      - name: dockersock
-        path: /var/run/docker.sock
-    commands:
-      - docker compose --env-file envs/dev.env -p hospital_dev up -d --build
-    when:
-      branch:
-        - dev
-
-  - name: deploy-uat
-    image: docker:24
-    volumes:
-      - name: dockersock
-        path: /var/run/docker.sock
-    commands:
-      - docker compose --env-file envs/uat.env -p hospital_uat up -d --build
-    when:
-      branch:
-        - uat
-
-  - name: deploy-prod
-    image: docker:24
-    volumes:
-      - name: dockersock
-        path: /var/run/docker.sock
-    commands:
-      - docker compose --env-file envs/prod.env -p hospital_prod up -d --build
-    when:
-      branch:
-        - main
+      - DRONE_RPC_PROTO=http
+      - DRONE_RPC_HOST=drone
+      - DRONE_RPC_SECRET=${DRONE_RPC_SECRET}
+      - DRONE_RUNNER_CAPACITY=2
+      - DRONE_RUNNER_NAME=runner
 
 volumes:
-  - name: dockersock
-    host:
-      path: /var/run/docker.sock
-
-when:
-  changes:
-    include:
-      - sistema_adfs/**
-      - HOSPITAL_SYSTEM_REACT/**
-      - docker-compose.yml
-      - envs/**
-      - .drone.yml
+  drone_data:
