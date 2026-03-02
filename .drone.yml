@@ -130,6 +130,36 @@ steps:
         - main
         - master
   
+  - name: notify-email-on-success
+    image: drillster/drone-email
+    settings:
+      host: smtp.gmail.com
+      port: 587
+      username:
+        from_secret: GMAIL_USER
+      password:
+        from_secret: GMAIL_APP_PASSWORD
+      from:
+        from_secret: GMAIL_USER
+      recipients:
+        - from_secret: EMAIL_TO_LEAD
+      subject: "[DRONE] ✅ Build exitoso ${DRONE_REPO} (${DRONE_BRANCH})"
+      body: |
+        ✅ El pipeline terminó correctamente.
+
+        Repo: ${DRONE_REPO}
+        Branch: ${DRONE_BRANCH}
+        Build: ${DRONE_BUILD_NUMBER}
+        Link: ${DRONE_BUILD_LINK}
+        Commit: ${DRONE_COMMIT_SHA}
+        Autor: ${DRONE_COMMIT_AUTHOR}
+
+        Mensaje:
+        ${DRONE_COMMIT_MESSAGE}
+    when:
+      status:
+        - success
+  
   - name: notify-email-on-failure
     image: drillster/drone-email
     settings:
