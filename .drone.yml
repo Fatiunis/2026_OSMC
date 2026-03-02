@@ -7,16 +7,18 @@ steps:
     image: php:8.2
     environment:
       DB_HOST: mysql_test
+      DB_PORT: 3306
       DB_USER: root
       DB_PASS: rootpassword
       DB_NAME: hospital_test
-      DB_PORT: 3306
     commands:
-      - apt-get update && apt-get install -y git unzip
-      - docker-php-ext-install mysqli
-      - pecl install xdebug && docker-php-ext-enable xdebug
-      - cd sistema_adfs
-      - php ./phpunit.phar -c phpunit.xml --testdox
+    - apt-get update
+    - apt-get install -y default-mysql-client
+    - echo "Probando DNS del servicio..."
+    - getent hosts mysql_test || true
+    - echo "Esperando MySQL..."
+    - for i in `seq 1 60`; do mysqladmin ping -h mysql_test -uroot -prootpassword && break || sleep 2; done
+    - php sistema_adfs/phpunit.phar -c sistema_adfs/phpunit.xml
 
   - name: test-frontend
     image: node:20
