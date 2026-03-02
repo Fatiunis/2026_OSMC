@@ -41,10 +41,16 @@ steps:
 
   - name: test-frontend
     image: node:20
+    environment:
+      CI: "true"
     commands:
+      - node -v
+      - npm -v
       - cd HOSPITAL_SYSTEM_REACT
-      - npm ci
-      - npm test
+      - echo "Instalando dependencias..."
+      - npm ci --no-audit --no-fund
+      - echo "Corriendo tests..."
+      - npm test -- --watchAll=false
 
   - name: deploy-dev
     image: docker:24
