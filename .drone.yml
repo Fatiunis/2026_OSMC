@@ -44,12 +44,8 @@ steps:
     environment:
       CI: "true"
     commands:
-      - node -v
-      - npm -v
       - cd HOSPITAL_SYSTEM_REACT
-      - echo "Instalando dependencias..."
       - npm ci --no-audit --no-fund
-      - echo "Corriendo tests..."
       - npm test -- --watchAll=false
 
   - name: deploy-dev
