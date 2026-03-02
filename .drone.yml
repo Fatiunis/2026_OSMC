@@ -1,42 +1,8 @@
-########################################
-# PIPELINE 1: BACKEND
-########################################
----
 kind: pipeline
 type: docker
-name: backend-ci
-
-trigger:
-  event:
-    - push
-    - pull_request
-  branch:
-    - dev
-    - uat
-  paths:
-    include:
-      - sistema_adfs/**
-      - setup_database.sql
-      - .drone.yml
-
-services:
-  - name: mysql_test
-    image: mysql:8.0
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: hospital_test
-    command:
-      - --default-authentication-plugin=mysql_native_password
+name: ci-cd
 
 steps:
-  - name: seed-db
-    image: mysql:8.0
-    commands:
-      - echo "Esperando MySQL..."
-      - for i in `seq 1 60`; do mysqladmin ping -h mysql_test -uroot -prootpassword && break || sleep 2; done
-      - echo "Cargando SQL..."
-      - mysql -h mysql_test -uroot -prootpassword hospital_test < setup_database.sql
-
   - name: test-backend
     image: php:8.2
     environment:
@@ -46,36 +12,12 @@ steps:
       DB_NAME: hospital_test
       DB_PORT: 3306
     commands:
-      - apt-get update && apt-get install -y default-mysql-client git unzip iputils-ping autoconf g++ make pkg-config
-      - echo "Esperando MySQL desde test-backend..."
-      - for i in `seq 1 60`; do mysqladmin ping -h "$DB_HOST" -u"$DB_USER" -p"$DB_PASS" && break || sleep 2; done
-      - mysql -h "$DB_HOST" -u"$DB_USER" -p"$DB_PASS" -e "SELECT 1;" "$DB_NAME"
-      - docker-php-ext-install mysqli pdo_mysql
+      - apt-get update && apt-get install -y git unzip
+      - docker-php-ext-install mysqli
       - pecl install xdebug && docker-php-ext-enable xdebug
       - cd sistema_adfs
       - php ./phpunit.phar -c phpunit.xml --testdox
 
-########################################
-# PIPELINE 2: FRONTEND
-########################################
----
-kind: pipeline
-type: docker
-name: frontend-ci
-
-trigger:
-  event:
-    - push
-    - pull_request
-  branch:
-    - dev
-    - uat
-  paths:
-    include:
-      - HOSPITAL_SYSTEM_REACT/**
-      - .drone.yml
-
-steps:
   - name: test-frontend
     image: node:20
     commands:
@@ -83,62 +25,39 @@ steps:
       - npm ci
       - npm test
 
-########################################
-# PIPELINE 3: DEPLOY
-########################################
----
-kind: pipeline
-type: docker
-name: deploy
-
-trigger:
-  event:
-    - push
-  branch:
-    - dev
-    - uat
-    - main
-  paths:
-    include:
-      - sistema_adfs/**
-      - HOSPITAL_SYSTEM_REACT/**
-      - docker-compose.yml
-      - envs/**
-      - .drone.yml
-
-steps:
   - name: deploy-dev
-    image: docker/compose:2.24.6
+    image: docker:24
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
     commands:
-      - docker-compose --env-file envs/dev.env -p hospital_dev up -d --build
+      - docker compose --env-file envs/dev.env -p hospital_dev up -d --build
     when:
       branch:
         - dev
 
   - name: deploy-uat
-    image: docker/compose:2.24.6
+    image: docker:24
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
     commands:
-      - docker-compose --env-file envs/uat.env -p hospital_uat up -d --build
+      - docker compose --env-file envs/uat.env -p hospital_uat up -d --build
     when:
       branch:
         - uat
 
   - name: deploy-prod
-    image: docker/compose:2.24.6
+    image: docker:24
     volumes:
       - name: dockersock
         path: /var/run/docker.sock
     commands:
-      - docker-compose --env-file envs/prod.env -p hospital_prod up -d --build
+      - docker compose --env-file envs/prod.env -p hospital_prod up -d --build
     when:
       branch:
         - main
+        - master
 
 volumes:
   - name: dockersock
