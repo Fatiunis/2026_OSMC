@@ -145,7 +145,7 @@ steps:
         - "fatimalramazzini@gmail.com"
       subject: "[DRONE] PRUEBA DESTINO FATIMA 999 ${DRONE_BUILD_NUMBER}"
       body: |
-        ✅ El pipeline terminó correctamente.
+        ✅✅ El pipeline terminó correctamente.
 
         Repo: ${DRONE_REPO}
         Branch: ${DRONE_BRANCH}
