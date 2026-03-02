@@ -158,16 +158,6 @@ steps:
     when:
       status:
         - success
-
-  - name: debug-email-to
-    image: alpine:3.20
-    environment:
-      EMAIL_TO: "fatimalramazzini@gmail.com"
-    commands:
-      - echo "ENVIANDO A: $EMAIL_TO"
-    when:
-      status:
-        - success
   
   - name: notify-email-on-failure
     image: drillster/drone-email
