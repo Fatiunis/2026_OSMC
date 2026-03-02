@@ -48,6 +48,52 @@ steps:
       - npm ci --no-audit --no-fund
       - npm test -- --watchAll=false
 
+  - name: sonar-backend
+    image: sonarsource/sonar-scanner-cli:latest
+    environment:
+      SONAR_TOKEN:
+        from_secret: SONAR_TOKEN
+      SONAR_HOST_URL:
+        from_secret: SONAR_HOST_URL
+    commands:
+      - |
+        set -e
+        case "$DRONE_BRANCH" in
+          dev)   KEY="osmc-be-dev" ;;
+          uat)   KEY="osmc-be-uat" ;;
+          main|master) KEY="osmc-be-prod" ;;
+          *) echo "Branch $DRONE_BRANCH no tiene análisis Sonar"; exit 0 ;;
+        esac
+        cd sistema_adfs
+        sonar-scanner \
+          -Dsonar.host.url="$SONAR_HOST_URL" \
+          -Dsonar.login="$SONAR_TOKEN" \
+          -Dsonar.projectKey="$KEY" \
+          -Dproject.settings=sonar-project.properties
+
+  - name: sonar-frontend
+    image: sonarsource/sonar-scanner-cli:latest
+    environment:
+      SONAR_TOKEN:
+        from_secret: SONAR_TOKEN
+      SONAR_HOST_URL:
+        from_secret: SONAR_HOST_URL
+    commands:
+      - |
+        set -e
+        case "$DRONE_BRANCH" in
+          dev)   KEY="osmc-fe-dev" ;;
+          uat)   KEY="osmc-fe-uat" ;;
+          main|master) KEY="osmc-fe-prod" ;;
+          *) echo "Branch $DRONE_BRANCH no tiene análisis Sonar"; exit 0 ;;
+        esac
+        cd HOSPITAL_SYSTEM_REACT
+        sonar-scanner \
+          -Dsonar.host.url="$SONAR_HOST_URL" \
+          -Dsonar.login="$SONAR_TOKEN" \
+          -Dsonar.projectKey="$KEY" \
+          -Dproject.settings=sonar-project.properties
+
   - name: deploy-dev
     image: docker:24
     volumes:
