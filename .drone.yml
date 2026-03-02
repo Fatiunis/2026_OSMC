@@ -141,8 +141,9 @@ steps:
         from_secret: GMAIL_APP_PASSWORD
       from:
         from_secret: GMAIL_USER
-      to: "fatimalramazzini@gmail.com"
-      subject: "[DRONE] ✅✅✅✅✅© Build exitoso ${DRONE_REPO} (${DRONE_BRANCH})"
+      to:
+        from_secret: EMAIL_TO
+      subject: "[DRONE] ✅✅✅✅✅©© Build exitoso ${DRONE_REPO} (${DRONE_BRANCH})"
       body: |
         ✅ El pipeline terminó correctamente.
 
@@ -156,6 +157,18 @@ steps:
         Mensaje:
         ${DRONE_COMMIT_MESSAGE}
     when:
+      status:
+        - success
+
+  - name: debug-email-to
+    image: alpine:3.20
+    environment:
+      EMAIL_TO: "fatimalramazzini@gmail.com"
+    commands:
+      - echo "ENVIANDO A: $EMAIL_TO"
+    when:
+      event:
+        - push
       status:
         - success
   
