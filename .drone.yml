@@ -48,6 +48,54 @@ steps:
       - npm ci --no-audit --no-fund
       - npm test -- --watchAll=false
 
+  - name: sonar-backend
+    image: sonarsource/sonar-scanner-cli:latest
+    environment:
+      SONAR_TOKEN:
+        from_secret: SONAR_TOKEN
+      SONAR_HOST_URL:
+        from_secret: SONAR_HOST_URL
+    commands:
+      - |
+        set -e
+        case "$DRONE_BRANCH" in
+          dev)   KEY="osmc-be-dev" ;;
+          uat)   KEY="osmc-be-uat" ;;
+          main|master) KEY="osmc-be-prod" ;;
+          *) echo "Branch $DRONE_BRANCH no tiene análisis Sonar"; exit 0 ;;
+        esac
+        cd sistema_adfs
+        sonar-scanner \
+          -Dsonar.host.url="$SONAR_HOST_URL" \
+          -Dsonar.login="$SONAR_TOKEN" \
+          -Dsonar.projectKey="$KEY" \
+          -Dproject.settings=sonar-project.properties \
+          -Dsonar.working.directory=/tmp/.scannerwork-be
+
+  - name: sonar-frontend
+    image: sonarsource/sonar-scanner-cli:latest
+    environment:
+      SONAR_TOKEN:
+        from_secret: SONAR_TOKEN
+      SONAR_HOST_URL:
+        from_secret: SONAR_HOST_URL
+    commands:
+      - |
+        set -e
+        case "$DRONE_BRANCH" in
+          dev)   KEY="osmc-fe-dev" ;;
+          uat)   KEY="osmc-fe-uat" ;;
+          main|master) KEY="osmc-fe-prod" ;;
+          *) echo "Branch $DRONE_BRANCH no tiene análisis Sonar"; exit 0 ;;
+        esac
+        cd HOSPITAL_SYSTEM_REACT
+        sonar-scanner \
+          -Dsonar.host.url="$SONAR_HOST_URL" \
+          -Dsonar.login="$SONAR_TOKEN" \
+          -Dsonar.projectKey="$KEY" \
+          -Dproject.settings=sonar-project.properties \
+          -Dsonar.working.directory=/tmp/.scannerwork-fe
+    
   - name: deploy-dev
     image: docker:24
     volumes:
@@ -81,6 +129,63 @@ steps:
       branch:
         - main
         - master
+  
+  - name: notify-email-on-success
+    image: drillster/drone-email
+    settings:
+      host: smtp.gmail.com
+      port: 587
+      username:
+        from_secret: GMAIL_USER
+      password:
+        from_secret: GMAIL_APP_PASSWORD
+      from:
+        from_secret: GMAIL_USER
+      to:
+        - "fatimalramazzini@gmail.com"
+      subject: "[DRONE] PRUEBA DESTINO FATIMA 999 ${DRONE_BUILD_NUMBER}"
+      body: |
+        ✅✅ El pipeline terminó correctamente.
+
+        Repo: ${DRONE_REPO}
+        Branch: ${DRONE_BRANCH}
+        Build: ${DRONE_BUILD_NUMBER}
+        Link: ${DRONE_BUILD_LINK}
+        Commit: ${DRONE_COMMIT_SHA}
+        Autor: ${DRONE_COMMIT_AUTHOR}
+
+        Mensaje:
+        ${DRONE_COMMIT_MESSAGE}
+    when:
+      status:
+        - success
+  
+  - name: notify-email-on-failure
+    image: drillster/drone-email
+    settings:
+      host: smtp.gmail.com
+      port: 587
+      username:
+        from_secret: GMAIL_USER
+      password:
+        from_secret: GMAIL_APP_PASSWORD
+      from:
+        from_secret: GMAIL_USER
+      to:
+        - "fatimalramazzini@gmail.com"
+      subject: "[DRONE] PRUEBA DESTINO FATIMA 999pass ${DRONE_BUILD_NUMBER}"
+      body: |
+        Build: ${DRONE_BUILD_LINK}
+        Repo: ${DRONE_REPO}
+        Branch: ${DRONE_BRANCH}
+        Commit: ${DRONE_COMMIT_SHA}
+        Author: ${DRONE_COMMIT_AUTHOR}
+        Message: ${DRONE_COMMIT_MESSAGE}
+    when:
+      status:
+        - failure
+        - killed
+        - error
 
 volumes:
   - name: dockersock

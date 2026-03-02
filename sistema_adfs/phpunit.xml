@@ -6,7 +6,7 @@
     </testsuite>
   </testsuites>
 
-  <!-- Opcional: si quieres coverage -->
+  <!-- Opcional:  coverage -->
   <coverage processUncoveredFiles="true">
     <include>
       <directory suffix=".php">.</directory>
