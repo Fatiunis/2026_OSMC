@@ -2,6 +2,15 @@ kind: pipeline
 type: docker
 name: ci-cd
 
+services:
+  - name: mysql_test
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: hospital_test
+    command:
+      - --default-authentication-plugin=mysql_native_password
+
 steps:
   - name: test-backend
     image: php:8.2
@@ -12,13 +21,13 @@ steps:
       DB_PASS: rootpassword
       DB_NAME: hospital_test
     commands:
-    - apt-get update
-    - apt-get install -y default-mysql-client
-    - echo "Probando DNS del servicio..."
-    - getent hosts mysql_test || true
-    - echo "Esperando MySQL..."
-    - for i in `seq 1 60`; do mysqladmin ping -h mysql_test -uroot -prootpassword && break || sleep 2; done
-    - php sistema_adfs/phpunit.phar -c sistema_adfs/phpunit.xml
+      - apt-get update
+      - apt-get install -y default-mysql-client
+      - echo "Probando DNS del servicio..."
+      - getent hosts mysql_test
+      - echo "Esperando MySQL..."
+      - for i in `seq 1 60`; do mysqladmin ping -h mysql_test -uroot -prootpassword && break || sleep 2; done
+      - php sistema_adfs/phpunit.phar -c sistema_adfs/phpunit.xml
 
   - name: test-frontend
     image: node:20
