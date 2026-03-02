@@ -1,0 +1,88 @@
+kind: pipeline
+type: docker
+name: ci-cd
+
+services:
+  - name: mysql_test
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: hospital_test
+    command:
+      - --default-authentication-plugin=mysql_native_password
+
+steps:
+  - name: seed-db
+    image: mysql:8.0
+    commands:
+      - echo "Esperando MySQL..."
+      - for i in `seq 1 60`; do mysql --ssl-mode=DISABLED -h mysql_test -uroot -prootpassword -e "SELECT 1" && break || sleep 2; done
+
+      - echo "Cargando SQL..."
+      - mysql --ssl-mode=DISABLED -h mysql_test -uroot -prootpassword -D hospital_test < setup_database.sql
+
+      - echo "Tablas en hospital_test:"
+      - mysql --ssl-mode=DISABLED -h mysql_test -uroot -prootpassword -D hospital_test -e "SHOW TABLES;"
+
+  - name: test-backend
+    image: php:8.2
+    environment:
+      DB_HOST: mysql_test
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASS: rootpassword
+      DB_NAME: hospital_test
+    commands:
+      - apt-get update
+      - apt-get install -y default-mysql-client libmariadb-dev
+      - docker-php-ext-install mysqli pdo_mysql
+      - php sistema_adfs/tests/seed_user.php
+      - php sistema_adfs/phpunit.phar -c sistema_adfs/phpunit.xml
+
+  - name: test-frontend
+    image: node:20
+    environment:
+      CI: "true"
+    commands:
+      - cd HOSPITAL_SYSTEM_REACT
+      - npm ci --no-audit --no-fund
+      - npm test -- --watchAll=false
+
+  - name: deploy-dev
+    image: docker:24
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    commands:
+      - docker compose -f docker-compose.deploy.yml --env-file envs/dev.env -p hospital_dev up -d --build
+    when:
+      branch:
+        - dev
+
+  - name: deploy-uat
+    image: docker:24
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    commands:
+      - docker compose -f docker-compose.deploy.yml --env-file envs/uat.env -p hospital_uat up -d --build
+    when:
+      branch:
+        - uat
+
+  - name: deploy-prod
+    image: docker:24
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    commands:
+      - docker compose -f docker-compose.deploy.yml --env-file envs/prod.env -p hospital_prod up -d --build
+    when:
+      branch:
+        - main
+        - master
+
+volumes:
+  - name: dockersock
+    host:
+      path: /var/run/docker.sock

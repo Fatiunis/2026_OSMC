@@ -1,0 +1,11 @@
+FROM php:8.2-apache
+
+RUN a2enmod rewrite
+RUN docker-php-ext-install mysqli
+
+# Instala xdebug para coverage
+RUN pecl install xdebug \
+  && docker-php-ext-enable xdebug
+
+WORKDIR /var/www/html
+COPY . /var/www/html

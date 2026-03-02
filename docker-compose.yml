@@ -1,7 +1,6 @@
 services:
   mysql:
     image: mysql:8.0
-    container_name: mysql_${ENV_NAME}
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: hospital_${ENV_NAME} # DB única por ambiente
@@ -13,7 +12,6 @@ services:
 
   backend:
     build: ./sistema_adfs
-    container_name: backend_${ENV_NAME}
     ports:
       - "${BE_PORT}:80" # Dev: 8080, UAT: 8081, Prod: 80
     environment:
@@ -21,43 +19,21 @@ services:
       DB_NAME: hospital_${ENV_NAME}
       DB_USER: root
       DB_PASS: rootpassword
+      DB_PORT: ${DB_PORT}
     depends_on:
       - mysql
+    volumes:
+      - ./sistema_adfs:/var/www/html  # Sincroniza código del backend
 
   frontend:
     build: ./HOSPITAL_SYSTEM_REACT
-    container_name: frontend_${ENV_NAME}
 
     ports:
       - "${FE_PORT}:5173" # Dev: 5173, UAT: 5174, Prod: 3000
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     volumes:
-      - ./HOSPITAL_SYSTEM_REACT:/app
-      - /app/node_modules
-
-
-    # NUEVO: Servicio de SonarQube
-  sonarqube:
-    image: sonarqube:community
-    container_name: sonarqube_tool
-    ports:
-      - "9000:9000"
-    volumes:
-      - sonarqube_data:/opt/sonarqube/data
-      - sonarqube_extensions:/opt/sonarqube/extensions
-      - sonarqube_logs:/opt/sonarqube/logs
-
-  jenkins:
-    image: jenkins/jenkins:lts
-    container_name: jenkins_tool
-    privileged: true
-    user: root
-    ports:
-      - "8082:8080" # Cambio a 8082 para no chocar con el BE de UAT
-      - "50000:50000"
-    volumes:
-      - jenkins_data:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock # Para que Jenkins use Docker
+      - ./HOSPITAL_SYSTEM_REACT:/app # Sincroniza tu código local con /app
+      - /app/node_modules           # Protege los módulos instalados en el contenedor
 
 
 volumes:
@@ -65,7 +41,3 @@ volumes:
   mysql_data_dev:
   mysql_data_uat:
   mysql_data_prod:
-  sonarqube_data:
-  sonarqube_extensions:
-  sonarqube_logs:
-  jenkins_data:
