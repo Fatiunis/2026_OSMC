@@ -142,7 +142,7 @@ steps:
       from:
         from_secret: GMAIL_USER
       to: "fatimalramazzini@gmail.com"
-      subject: "[DRONE] ✅✅✅✅✅ Build exitoso ${DRONE_REPO} (${DRONE_BRANCH})"
+      subject: "[DRONE] ✅✅✅✅✅© Build exitoso ${DRONE_REPO} (${DRONE_BRANCH})"
       body: |
         ✅ El pipeline terminó correctamente.
 
