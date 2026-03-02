@@ -11,6 +11,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header('Content-Type: application/json; charset=utf-8');
 
 include(__DIR__ . "/../db.php");
 
@@ -20,9 +21,7 @@ $input = file_get_contents("php://input");
 //file_put_contents("debug.txt", "INPUT CRUDO:\n" . $input . "\n\n", FILE_APPEND);
 
 $data = json_decode($input, true);
-// Guardar JSON decodificado
-//file_put_contents("debug.txt", "DECODIFICADO:\n" . print_r($data, true) . "\n\n", FILE_APPEND);
-file_put_contents(__DIR__ . "/../auth_debug.txt", "DECODIFICADO:\n" . print_r($data, true) . "\n\n", FILE_APPEND);
+header('Content-Type: application/json; charset=utf-8');
 
 if (!isset($data['correo']) || !isset($data['password'])) {
     echo json_encode(["success" => false, "message" => "Datos incompletos"]);
