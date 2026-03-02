@@ -69,7 +69,8 @@ steps:
           -Dsonar.host.url="$SONAR_HOST_URL" \
           -Dsonar.login="$SONAR_TOKEN" \
           -Dsonar.projectKey="$KEY" \
-          -Dproject.settings=sonar-project.properties
+          -Dproject.settings=sonar-project.properties \
+          -Dsonar.working.directory=/tmp/.scannerwork-be
 
   - name: sonar-frontend
     image: sonarsource/sonar-scanner-cli:latest
@@ -92,8 +93,9 @@ steps:
           -Dsonar.host.url="$SONAR_HOST_URL" \
           -Dsonar.login="$SONAR_TOKEN" \
           -Dsonar.projectKey="$KEY" \
-          -Dproject.settings=sonar-project.properties
-
+          -Dproject.settings=sonar-project.properties \
+          -Dsonar.working.directory=/tmp/.scannerwork-fe
+    
   - name: deploy-dev
     image: docker:24
     volumes:
