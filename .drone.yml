@@ -56,7 +56,7 @@ steps:
         $stmt->bind_param("ssss", $nombre, $correo, $hash, $rol);
         $stmt->execute();
 
-        echo "Seed ok: $correo\n";
+        echo "Seed ok $correo\n";
         '
 
       - php sistema_adfs/phpunit.phar -c sistema_adfs/phpunit.xml
