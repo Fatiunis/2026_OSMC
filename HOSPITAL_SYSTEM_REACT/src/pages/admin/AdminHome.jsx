@@ -6,7 +6,7 @@ const AdminHome = () => {
   return (
     <div className="admin-home-container">
       <Container>
-        <h1 className="dashboard-title">Bienvenido, Administrador prueba DEV Final</h1>
+        <h1 className="dashboard-title">Bienvenido, Administrador prueba DEV Final 1</h1>
         <p className="dashboard-text">
           Aquí puedes visualizar un resumen del sistema y gestionar todas las operaciones.
         </p>
