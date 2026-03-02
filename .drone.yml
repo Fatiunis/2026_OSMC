@@ -143,7 +143,7 @@ steps:
         from_secret: GMAIL_USER
       to:
         - "fatimalramazzini@gmail.com"
-      subject: "[DRONE] ✅ Build exitoso ${DRONE_REPO} (${DRONE_BRANCH})"
+      subject: "[DRONE] PRUEBA DESTINO FATIMA 999 ${DRONE_BUILD_NUMBER}"
       body: |
         ✅ El pipeline terminó correctamente.
 
@@ -172,8 +172,8 @@ steps:
       from:
         from_secret: GMAIL_USER
       to:
-        - from_secret: EMAIL_TO_LEAD
-      subject: "[DRONE] Falló ${DRONE_REPO} en ${DRONE_BRANCH} (#${DRONE_BUILD_NUMBER})"
+        - "fatimalramazzini@gmail.com"
+      subject: "[DRONE] PRUEBA DESTINO FATIMA 999 ${DRONE_BUILD_NUMBER}"
       body: |
         Build: ${DRONE_BUILD_LINK}
         Repo: ${DRONE_REPO}
