@@ -141,7 +141,7 @@ steps:
         from_secret: GMAIL_APP_PASSWORD
       from:
         from_secret: GMAIL_USER
-      to: "fplopez@unis.edu.gt"
+      to: "fatimalramazzini@gmail.com"
       subject: "[DRONE] ✅✅✅✅✅ Build exitoso ${DRONE_REPO} (${DRONE_BRANCH})"
       body: |
         ✅ El pipeline terminó correctamente.
@@ -170,7 +170,7 @@ steps:
         from_secret: GMAIL_APP_PASSWORD
       from:
         from_secret: GMAIL_USER
-      to: "fplopez@unis.edu.gt"
+      to: "fatimalramazzini@gmail.com"
       subject: "[DRONE] Falló ${DRONE_REPO} en ${DRONE_BRANCH} (#${DRONE_BUILD_NUMBER})"
       body: |
         Build: ${DRONE_BUILD_LINK}
