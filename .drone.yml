@@ -22,11 +22,16 @@ steps:
       DB_NAME: hospital_test
     commands:
       - apt-get update
-      - apt-get install -y default-mysql-client
+      - apt-get install -y default-mysql-client libmariadb-dev
+      - docker-php-ext-install mysqli pdo_mysql
+
       - echo "Probando DNS del servicio..."
       - getent hosts mysql_test
+
       - echo "Esperando MySQL..."
-      - for i in `seq 1 60`; do mysqladmin ping -h mysql_test -uroot -prootpassword && break || sleep 2; done
+      - for i in `seq 1 60`; do mysqladmin ping -h mysql_test -uroot -prootpassword --ssl-mode=DISABLED && break || sleep 2; done
+
+      - php -m | grep -E "mysqli|pdo_mysql"   # para confirmar que sí cargaron
       - php sistema_adfs/phpunit.phar -c sistema_adfs/phpunit.xml
 
   - name: test-frontend
