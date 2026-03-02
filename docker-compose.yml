@@ -32,7 +32,7 @@ services:
       - "${FE_PORT}:5173" # Dev: 5173, UAT: 5174, Prod: 3000
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     volumes:
-      - ./HOSPITAL_SYSTEM_REACT:/app # Sincroniza tu código local con /app
+      - ./HOSPITAL_SYSTEM_REACT:/app # Sincroniza código local con /app
       - /app/node_modules           # Protege los módulos instalados en el contenedor
 
 
