@@ -54,7 +54,7 @@ steps:
       - name: dockersock
         path: /var/run/docker.sock
     commands:
-      - docker compose --env-file envs/dev.env -p hospital_dev up -d --build
+      - docker compose -f docker-compose.deploy.yml --env-file envs/dev.env -p hospital_dev up -d --build
     when:
       branch:
         - dev
@@ -65,7 +65,7 @@ steps:
       - name: dockersock
         path: /var/run/docker.sock
     commands:
-      - docker compose --env-file envs/uat.env -p hospital_uat up -d --build
+      - docker compose -f docker-compose.deploy.yml --env-file envs/uat.env -p hospital_uat up -d --build
     when:
       branch:
         - uat
@@ -76,7 +76,7 @@ steps:
       - name: dockersock
         path: /var/run/docker.sock
     commands:
-      - docker compose --env-file envs/prod.env -p hospital_prod up -d --build
+      - docker compose -f docker-compose.deploy.yml --env-file envs/prod.env -p hospital_prod up -d --build
     when:
       branch:
         - main
