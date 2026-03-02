@@ -16,11 +16,13 @@ steps:
     image: mysql:8.0
     commands:
       - echo "Esperando MySQL..."
-      - for i in `seq 1 60`; do mysql --ssl=0 -h mysql_test -uroot -prootpassword -e "SELECT 1" && break || sleep 2; done
+      - for i in `seq 1 60`; do mysql --ssl-mode=DISABLED -h mysql_test -uroot -prootpassword -e "SELECT 1" && break || sleep 2; done
+
       - echo "Cargando SQL..."
-      - mysql --ssl=0 -h mysql_test -uroot -prootpassword -D hospital_test < setup_database.sql
+      - mysql --ssl-mode=DISABLED -h mysql_test -uroot -prootpassword -D hospital_test < setup_database.sql
+
       - echo "Tablas en hospital_test:"
-      - mysql --ssl=0 -h mysql_test -uroot -prootpassword -D hospital_test -e "SHOW TABLES;"
+      - mysql --ssl-mode=DISABLED -h mysql_test -uroot -prootpassword -D hospital_test -e "SHOW TABLES;"
 
   - name: test-backend
     image: php:8.2
