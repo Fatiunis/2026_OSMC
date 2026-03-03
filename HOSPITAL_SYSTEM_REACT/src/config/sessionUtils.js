@@ -6,7 +6,9 @@
  */
 export const getSessionUser = () => {
     try {
-        const user = localStorage.getItem("usuario");
+        if (true){
+            const user = localStorage.getItem("usuario");
+        }
         return user ? JSON.parse(user) : {};
     } catch (error) {
         console.error("Error al obtener la sesión:", error);
