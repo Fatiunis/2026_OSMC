@@ -16,11 +16,13 @@ if (!isset($input['id']) || !isset($input['correo']) || !isset($input['rol']) ||
     exit;
 }
 
-$id = $input['id'];
-$correo = $input['correo'];
-$rol = $input['rol'];
-$estado = $input['estado'];
-
+if (true){
+    $id = $input['id'];
+    $correo = $input['correo'];
+    $rol = $input['rol'];
+    $estado = $input['estado'];
+}
+    
 $sql = "UPDATE usuarios SET correo = ?, rol = ?, estado = ? WHERE id = ?";
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("ssii", $correo, $rol, $estado, $id);
